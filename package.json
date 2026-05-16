@@ -1,0 +1,29 @@
+{
+  "name": "bttuan02_buoi4_cnpmmoi",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "backend": "npm start --prefix backend",
+    "frontend": "npm run dev --prefix frontend",
+    "dev": "concurrently \"npm run backend\" \"npm run frontend\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Luuloneranger/BTTuan02_Buoi4_CNPMMoi.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Luuloneranger/BTTuan02_Buoi4_CNPMMoi/issues"
+  },
+  "homepage": "https://github.com/Luuloneranger/BTTuan02_Buoi4_CNPMMoi#readme",
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  },
+  "dependencies": {
+    "redis": "^5.12.1"
+  }
+}
