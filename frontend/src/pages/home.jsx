@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { fetchApartmentsThunk } from "../store/apartmentSlice";
-import { Link } from "react-router-dom";
 import InputField from "../components/common/InputField";
 import Button from "../components/common/Button";
 
@@ -11,7 +10,10 @@ const HomePage = () => {
     (state) => state.apartments,
   );
 
-  // Trạng thái lưu trữ các điều kiện lọc dữ liệu
+  // Khai báo các biến neo (Ref) để điều khiển thanh cuộn ngang bằng nút bấm
+  const bestSellersRef = useRef(null);
+  const mostViewedRef = useRef(null);
+
   const [filters, setFilters] = useState({
     search: "",
     category: "",
@@ -20,7 +22,6 @@ const HomePage = () => {
     bedrooms: "",
   });
 
-  // Gọi API lấy dữ liệu căn hộ ngay khi vừa mở trang chủ
   useEffect(() => {
     dispatch(fetchApartmentsThunk({}));
   }, [dispatch]);
@@ -29,26 +30,36 @@ const HomePage = () => {
     setFilters({ ...filters, [e.target.name]: e.target.value });
   };
 
-  // Hàm xử lý kích hoạt bộ lọc khi bấm nút "Tìm kiếm"
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     dispatch(fetchApartmentsThunk(filters));
   };
 
-  // Phân loại danh sách căn hộ theo các tiêu chí yêu cầu của đề tài
+  // Logic nhấn nút dịch chuyển thanh cuộn sang Trái hoặc sang Phải (Phân trang ngang)
+  const handleScrollHorizontal = (elementRef, direction) => {
+    if (elementRef.current) {
+      const scrollAmount = 320; // Khoảng cách dịch chuyển mỗi lần bấm nút (px)
+      elementRef.current.scrollLeft +=
+        direction === "left" ? -scrollAmount : scrollAmount;
+    }
+  };
+
+  // Phân loại danh sách dữ liệu từ 10 căn mẫu đã nạp
   const promoApartments = apartments.filter(
     (item) => item.isPromoted || item.discountPrice > 0,
   );
-  const latestApartments = [...apartments]
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-    .slice(0, 4);
+  // Sắp xếp theo bán chạy (soldCount) để lấy Top 10
   const bestSellers = [...apartments]
     .sort((a, b) => b.soldCount - a.soldCount)
-    .slice(0, 4);
+    .slice(0, 10);
+  // Sắp xếp theo lượt xem (viewsCount) để lấy Top 10
+  const mostViewed = [...apartments]
+    .sort((a, b) => (b.viewsCount || 0) - (a.viewsCount || 0))
+    .slice(0, 10);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-6 space-y-10">
-      {/* ─── KHỐI BỘ LỌC TÌM KIẾM ĐA ĐIỀU KIỆN ─── */}
+    <div className="max-w-7xl mx-auto px-4 py-6 space-y-12">
+      {/* ─── 1. KHỐI BỘ LỌC TÌM KIẾM ĐA ĐIỀU KIỆN ─── */}
       <form
         onSubmit={handleSearchSubmit}
         className="bg-white p-5 rounded-2xl shadow-sm border grid grid-cols-1 md:grid-cols-5 gap-4 items-end"
@@ -72,6 +83,7 @@ const HomePage = () => {
             onChange={handleInputChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
+            <option value="">Tất cả loại phòng</option>
             <option value="6645a1b2c3d4e5f6a7b8c901">Studio</option>
             <option value="6645a1b2c3d4e5f6a7b8c902">Căn hộ 1 phòng ngủ</option>
             <option value="6645a1b2c3d4e5f6a7b8c903">Căn hộ 2 phòng ngủ</option>
@@ -115,7 +127,7 @@ const HomePage = () => {
         </p>
       )}
 
-      {/* ─── 1. KHU VỰC KHUYẾN MÃI HOT ─── */}
+      {/* ─── 2. KHU VỰC KHUYẾN MÃI HOT (HIỂN THỊ DẠNG LƯỚI GRID) ─── */}
       <section>
         <h2 className="text-xl font-bold text-red-600 mb-4 flex items-center gap-2">
           🔥 Ưu Đãi Đặc Biệt / Khuyến Mãi
@@ -127,73 +139,146 @@ const HomePage = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             {promoApartments.map((apt) => (
-              <ApartmentCard key={apt._id} data={apt} />
+              <ApartmentCard key={apt._id} data={apt} isSlider={false} />
             ))}
           </div>
         )}
       </section>
 
-      {/* ─── 2. KHU VỰC CĂN HỘ MỚI NHẤT ─── */}
-      <section>
-        <h2 className="text-xl font-bold text-gray-800 mb-4">
-          ✨ Căn Hộ Mới Nhất
+      {/* ─── 3. KHU VỰC TOP 10 BÁN CHẠY (TRƯỢT NGANG NÂNG CAO) ─── */}
+      <section className="relative group">
+        <h2 className="text-xl font-bold text-amber-600 mb-4">
+          🏆 Top 10 Căn Hộ Bán Chạy / Được Cọc Nhiều Nhất
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          {latestApartments.map((apt) => (
-            <ApartmentCard key={apt._id} data={apt} />
+
+        {/* Nút bấm dịch sang trái */}
+        <button
+          type="button"
+          onClick={() => handleScrollHorizontal(bestSellersRef, "left")}
+          className="absolute left-[-15px] top-[55%] -translate-y-1/2 bg-white/90 border border-gray-200 text-gray-700 w-10 h-10 rounded-full shadow-md z-10 hidden group-hover:flex items-center justify-center font-bold text-lg hover:bg-gray-100 transition-all"
+        >
+          ❮
+        </button>
+
+        {/* Vùng cuộn ngang chứa danh sách */}
+        <div
+          ref={bestSellersRef}
+          className="flex gap-6 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-4 select-none"
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }} // Ẩn thanh scrollbar xấu trên Firefox/IE
+        >
+          {bestSellers.map((apt) => (
+            <ApartmentCard
+              key={apt._id}
+              data={apt}
+              isSlider={true}
+              showBadge="sold"
+            />
           ))}
         </div>
+
+        {/* Nút bấm dịch sang phải */}
+        <button
+          type="button"
+          onClick={() => handleScrollHorizontal(bestSellersRef, "right")}
+          className="absolute right-[-15px] top-[55%] -translate-y-1/2 bg-white/90 border border-gray-200 text-gray-700 w-10 h-10 rounded-full shadow-md z-10 hidden group-hover:flex items-center justify-center font-bold text-lg hover:bg-gray-100 transition-all"
+        >
+          ❯
+        </button>
       </section>
 
-      {/* ─── 3. KHU VỰC ĐẶT CỌC BÁN CHẠY NHẤT ─── */}
-      <section>
-        <h2 className="text-xl font-bold text-amber-600 mb-4">
-          🏆 Căn Hộ Bán Chại / Được Cọc Nhiều Nhất
+      {/* ─── 4. KHU VỰC TOP 10 XEM NHIỀU NHẤT (TRƯỢT NGANG NÂNG CAO) ─── */}
+      <section className="relative group">
+        <h2 className="text-xl font-bold text-blue-600 mb-4">
+          👀 Top 10 Căn Hộ Có Lượt Xem Nhiều Nhất
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          {bestSellers.map((apt) => (
-            <ApartmentCard key={apt._id} data={apt} />
+
+        <button
+          type="button"
+          onClick={() => handleScrollHorizontal(mostViewedRef, "left")}
+          className="absolute left-[-15px] top-[55%] -translate-y-1/2 bg-white/90 border border-gray-200 text-gray-700 w-10 h-10 rounded-full shadow-md z-10 hidden group-hover:flex items-center justify-center font-bold text-lg hover:bg-gray-100 transition-all"
+        >
+          ❮
+        </button>
+
+        <div
+          ref={mostViewedRef}
+          className="flex gap-6 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-4 select-none"
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        >
+          {mostViewed.map((apt) => (
+            <ApartmentCard
+              key={apt._id}
+              data={apt}
+              isSlider={true}
+              showBadge="view"
+            />
           ))}
         </div>
+
+        <button
+          type="button"
+          onClick={() => handleScrollHorizontal(mostViewedRef, "right")}
+          className="absolute right-[-15px] top-[55%] -translate-y-1/2 bg-white/90 border border-gray-200 text-gray-700 w-10 h-10 rounded-full shadow-md z-10 hidden group-hover:flex items-center justify-center font-bold text-lg hover:bg-gray-100 transition-all"
+        >
+          ❯
+        </button>
       </section>
     </div>
   );
 };
 
-// Component thẻ căn hộ dùng chung trong trang chủ
-const ApartmentCard = ({ data }) => {
+// Component con: Thẻ hiển thị căn hộ (Tương thích cả Grid và Slider trượt ngang)
+const ApartmentCard = ({ data, isSlider, showBadge }) => {
   return (
-    <Link
-      to={`/apartments/${data._id}`}
-      className="bg-white border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between"
+    <div
+      className={`bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col justify-between ${
+        isSlider ? "w-[285px] shrink-0 snap-start" : "w-full"
+      }`}
     >
       <div>
-        <img
-          src={data.images?.[0] || "https://via.placeholder.com/400x250"}
-          alt={data.title}
-          className="w-full h-44 object-cover"
-        />
+        <div className="relative">
+          <img
+            src={data.images?.[0] || "https://via.placeholder.com/400x250"}
+            alt={data.title}
+            className="w-full h-44 object-cover"
+          />
+
+          {/* Badge động hiển thị thông tin bổ sung tùy thuộc loại danh sách */}
+          {showBadge === "sold" && (
+            <span className="absolute top-3 left-3 bg-amber-500 text-white text-[11px] font-bold px-2 py-1 rounded-lg shadow-sm">
+              🔥 Đã cọc: {data.soldCount} căn
+            </span>
+          )}
+          {showBadge === "view" && (
+            <span className="absolute top-3 left-3 bg-blue-500 text-white text-[11px] font-bold px-2 py-1 rounded-lg shadow-sm">
+              👁️ {data.viewsCount || 0} lượt xem
+            </span>
+          )}
+        </div>
+
         <div className="p-4 space-y-1">
-          <span className="text-xs font-bold text-blue-600 uppercase">
-            {data.category}
+          <span className="text-[11px] font-bold text-blue-500 uppercase tracking-wider block">
+            ID: {data.category?.slice(-6)}
           </span>
-          <h3 className="font-semibold text-gray-800 text-base truncate">
+          <h3 className="font-semibold text-gray-800 text-sm line-clamp-2 h-10 leading-5">
             {data.title}
           </h3>
-          <p className="text-sm font-bold text-blue-600">
+          <p className="text-base font-black text-blue-600 pt-1">
             {data.price?.toLocaleString()} VNĐ
           </p>
         </div>
       </div>
-      <div className="p-4 pt-0 border-t border-gray-100 flex justify-between text-xs text-gray-500 mt-2">
+
+      <div className="p-4 pt-0 border-t border-gray-50 flex justify-between text-[11px] text-gray-400 mt-2 font-medium">
         <span>
-          Còn trống: <b>{data.inventory}</b>
+          Còn trống: <b className="text-gray-700">{data.inventory}</b>
         </span>
         <span>
-          Đã cọc: <b>{data.soldCount}</b>
+          Diện tích:{" "}
+          <b className="text-gray-700">{data.features?.area || 0}m²</b>
         </span>
       </div>
-    </Link>
+    </div>
   );
 };
 

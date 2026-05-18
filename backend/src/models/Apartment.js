@@ -20,6 +20,7 @@ const ApartmentSchema = new mongoose.Schema(
       bathrooms: { type: Number, default: 1 },
       area: { type: Number },
     },
+    viewCount: { type: Number, default: 0 }, // Số lượt xem căn hộ
   },
   { timestamps: true },
 );
