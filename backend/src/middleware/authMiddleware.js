@@ -8,7 +8,6 @@ const verifyToken = (req, res, next) => {
       .status(401)
       .json({ message: "Bạn chưa đăng nhập! Vui lòng gửi kèm Token." });
   }
-  s;
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);

@@ -12,6 +12,8 @@ import HomePage from "./pages/home.jsx";
 import ApartmentDetail from "./pages/detail.jsx";
 import ForgotPasswordPage from "./pages/forgot-password.jsx";
 import ProfilePage from "./pages/profile.jsx";
+import BookingCart from "./pages/BookingCart.jsx";
+import ResidentDashboard from "./pages/ResidentDashboard.jsx";
 
 const router = createBrowserRouter([
   {
@@ -20,7 +22,9 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <HomePage /> },
       { path: "apartments/:id", element: <ApartmentDetail /> }, // Trang chi tiết sản phẩm
-      { path: "profile", element: <ProfilePage /> }, // Trang cá nhân thành viên
+      { path: "profile", element: <ProfilePage /> },
+      { path: "cart", element: <BookingCart /> },
+      { path: "dashboard", element: <ResidentDashboard /> },
     ],
   },
   { path: "register", element: <RegisterPage /> },

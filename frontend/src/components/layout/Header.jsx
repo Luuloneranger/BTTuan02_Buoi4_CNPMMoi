@@ -40,6 +40,15 @@ const Header = () => {
           </Link>
         )}
       </div>
+      <Link
+        to="/cart"
+        className="relative p-2 text-gray-600 hover:text-blue-600 font-medium text-sm flex items-center gap-1"
+      >
+        🛒 Danh sách quan tâm
+        <span className="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">
+          1
+        </span>
+      </Link>
     </nav>
   );
 };
