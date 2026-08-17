@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
 import { Swiper, SwiperSlide } from "swiper/react";
+import { addToCartThunk } from "../store/cartSlice";
 import { Navigation, Pagination } from "swiper/modules";
 import axiosClient from "../api/axiosClient";
 import Button from "../components/common/Button";
@@ -12,11 +13,13 @@ import "swiper/css/pagination";
 
 const ApartmentDetail = () => {
   const { id } = useParams(); // Lấy mã ID của căn hộ từ thanh URL địa chỉ
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { user } = useSelector((state) => state.auth || { user: null });
   const [apartment, setApartment] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const allApartments = useSelector((state) => state.apartments.list);
 
-  // Gọi trực tiếp API chi tiết của Bài tập 02 dựa trên ID phòng
   useEffect(() => {
     axiosClient
       .get(`/apartments/${id}`)
@@ -36,6 +39,15 @@ const ApartmentDetail = () => {
   };
   const handleDecrement = () => {
     if (quantity > 1) setQuantity(quantity - 1);
+  };
+
+  const handleProceedToDeposit = async () => {
+    if (!user) {
+      navigate("/login");
+    } else {
+      await dispatch(addToCartThunk({ apartmentId: apartment._id }));
+      navigate("/cart");
+    }
   };
 
   // Tìm các căn hộ tương tự có cùng loại danh mục (loại trừ căn hiện tại)
@@ -84,9 +96,16 @@ const ApartmentDetail = () => {
         {/* THÔNG TIN CHI TIẾT VÀ SỐ LƯỢNG ĐẶT CỌC */}
         <div className="flex flex-col justify-between space-y-4">
           <div>
-            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-bold uppercase">
-              {apartment.category}
-            </span>
+            <div className="flex gap-2 items-center">
+              <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-bold uppercase">
+                {apartment.category}
+              </span>
+              {apartment.inventory <= 0 && (
+                <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded font-bold uppercase">
+                  TẠM HẾT HÀNG
+                </span>
+              )}
+            </div>
             <h1 className="text-2xl font-bold text-gray-800 mt-2 mb-1">
               {apartment.title}
             </h1>
@@ -109,31 +128,15 @@ const ApartmentDetail = () => {
             </p>
           </div>
 
-          {/* Tăng giảm số lượng giữ chỗ căn hộ */}
-          <div className="border-t pt-4 space-y-3">
-            <div className="flex items-center gap-4">
-              <span className="text-sm font-medium text-gray-700">
-                Chọn số lượng đặt suất:
-              </span>
-              <div className="flex items-center border rounded-lg overflow-hidden bg-gray-50">
-                <button
-                  onClick={handleDecrement}
-                  className="px-3 py-1 font-bold text-gray-600 hover:bg-gray-200"
-                >
-                  -
-                </button>
-                <span className="px-4 text-sm font-bold text-gray-800">
-                  {quantity}
-                </span>
-                <button
-                  onClick={handleIncrement}
-                  className="px-3 py-1 font-bold text-gray-600 hover:bg-gray-200"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-            <Button>Tiến Hành Đăng Ký Đặt Cọc Phòng</Button>
+          <div>
+            <Button
+              disabled={apartment.inventory <= 0}
+              onClick={handleProceedToDeposit}
+            >
+              {apartment.inventory <= 0
+                ? "Tạm Hết Hàng"
+                : "Tiến Hành Đăng Ký Đặt Cọc Phòng"}
+            </Button>
           </div>
         </div>
       </div>

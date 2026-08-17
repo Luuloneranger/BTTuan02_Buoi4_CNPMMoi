@@ -24,8 +24,8 @@ const ContractSchema = new mongoose.Schema(
       enum: ["PENDING", "PAID", "REFUNDED"],
       default: "PENDING",
     },
-    totalAmount: { type: Number, required: true }, // tiền cọc giữ chỗ
-    checkInDate: { type: Date, required: true }, // Ngày nhận phòng
+    totalAmount: { type: Number, required: true },
+    checkInDate: { type: Date, required: true },
 
     cleaningService: {
       isRegistered: { type: Boolean, default: false },

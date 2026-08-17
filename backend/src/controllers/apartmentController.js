@@ -10,7 +10,7 @@ const getApartments = async (req, res) => {
     }
 
     if (category) {
-      queryCondition.category = category; // Lúc này nhận vào ObjectId từ Frontend gửi lên sẽ chuẩn luôn
+      queryCondition.category = category;
     }
 
     if (minPrice || maxPrice) {
@@ -19,7 +19,6 @@ const getApartments = async (req, res) => {
       if (maxPrice) queryCondition.price.$lte = Number(maxPrice);
     }
 
-    // ❌ SỬA DÒNG NÀY: Vì bedrooms nằm trong features nên phải viết dạng chuỗi lồng nhau
     if (bedrooms) {
       queryCondition["features.bedrooms"] = Number(bedrooms);
     }
@@ -27,7 +26,7 @@ const getApartments = async (req, res) => {
     const apartments = await Apartment.find(queryCondition);
     return res.status(200).json(apartments);
   } catch (error) {
-    console.error(error); // In lỗi chi tiết ra console của backend để dễ nhìn
+    console.error(error);
     return res.status(500).json({ message: "Lỗi lấy danh sách căn hộ" });
   }
 };
@@ -35,7 +34,11 @@ const getApartments = async (req, res) => {
 // Xem chi tiết căn hộ
 const getApartmentById = async (req, res) => {
   try {
-    const apartment = await Apartment.findById(req.params.id);
+    const apartment = await Apartment.findByIdAndUpdate(
+      req.params.id,
+      { $inc: { viewsCount: 1 } }, // ✅ INCREMENT VIEW COUNT ATOMICALLY
+      { new: true },
+    );
     if (!apartment)
       return res.status(404).json({ message: "Không tìm thấy căn hộ này!" });
     return res.status(200).json(apartment);
@@ -47,16 +50,14 @@ const getApartmentById = async (req, res) => {
 const getApartmentsByCategory = async (req, res) => {
   try {
     const { categoryId } = req.params;
-    const page = parseInt(req.query.page) || 1; // Trang hiện tại (Mặc định trang 1)
-    const limit = parseInt(req.query.limit) || 4; // Số lượng căn hộ mỗi lần load (Mặc định 4 căn)
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 4;
     const skip = (page - 1) * limit;
 
-    // Tìm căn hộ thuộc danh mục và thực hiện phân trang bằng .skip() và .limit()
     const apartments = await Apartment.find({ category: categoryId })
       .skip(skip)
       .limit(limit);
 
-    // Tính tổng số lượng để Frontend biết khi nào hết phòng để dừng cuộn
     const totalApartments = await Apartment.countDocuments({
       category: categoryId,
     });
@@ -70,15 +71,12 @@ const getApartmentsByCategory = async (req, res) => {
   }
 };
 
-// 2. API: Lấy Top 10 Bán chạy nhất và Xem nhiều nhất
 const getTopFeatures = async (req, res) => {
   try {
-    // Top 10 bán chạy nhất (Sắp xếp giảm dần theo soldCount)
     const bestSellers = await Apartment.find()
       .sort({ soldCount: -1 })
       .limit(10);
 
-    // Top 10 xem nhiều nhất (Sắp xếp giảm dần theo viewsCount)
     const mostViewed = await Apartment.find()
       .sort({ viewsCount: -1 })
       .limit(10);

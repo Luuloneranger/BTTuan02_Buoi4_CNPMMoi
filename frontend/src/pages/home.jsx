@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
+import { Link } from "react-router-dom";
 import { fetchApartmentsThunk } from "../store/apartmentSlice";
 import InputField from "../components/common/InputField";
 import Button from "../components/common/Button";
@@ -232,34 +233,44 @@ const HomePage = () => {
 const ApartmentCard = ({ data, isSlider, showBadge }) => {
   const dispatch = useDispatch();
 
+  const { items: cartItems } = useSelector(
+    (state) => state.cart || { items: [] },
+  );
+
+  // 🌟 ĐỒNG BỘ 2: Kiểm tra xem căn hộ này đã được bấm thích trước đây chưa dựa trên ID căn hộ
+  const isFavorite = cartItems.some(
+    (item) => (item.apartmentId?._id || item._id) === data._id,
+  );
+
   const handleAddToWishlist = (e) => {
-    e.preventDefault(); // Chặn hành động chuyển trang nếu thẻ card có bọc thẻ Link
-    e.stopPropagation(); // Chặn sự kiện nổi bọt
-
-    // Gọi API lưu vào danh sách quan tâm trên Database
+    e.preventDefault();
+    e.stopPropagation();
     dispatch(addToCartThunk({ apartmentId: data._id }));
-    alert(`Đã thêm căn hộ "${data.title}" vào danh sách quan tâm!`);
+    alert(`Đã cập nhật trạng thái quan tâm của căn hộ "${data.title}"!`);
   };
-
   return (
-    <div
+    <Link
+      to={`/apartments/${data._id}`}
       className={`bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col justify-between ${isSlider ? "w-[285px] shrink-0 snap-start" : "w-full"}`}
     >
       <div>
         <div className="relative group/img">
-          {" "}
-          {/* Thêm group/img để tạo hiệu ứng hover */}
           <img
             src={data.images?.[0] || "https://via.placeholder.com/400x250"}
             alt={data.title}
             className="w-full h-44 object-cover"
           />
-          {/* 🔹 NÚT TRÁI TIM YÊU THÍCH LƠ LỬNG TRÊN ẢNH */}
+
+          {/* 🔹 ĐỔI MÀU NÚT TRÁI TIM DỰA TRÊN TRẠNG THÁI THẬT */}
           <button
             type="button"
             onClick={handleAddToWishlist}
-            className="absolute top-3 right-3 bg-white/80 hover:bg-white text-gray-500 hover:text-red-500 p-2 rounded-full shadow-md transition-all z-20 text-xs font-bold"
-            title="Thêm vào danh sách quan tâm"
+            className={`absolute top-3 right-3 p-2 rounded-full shadow-md transition-all z-20 text-xs font-bold ${
+              isFavorite
+                ? "bg-red-50 text-red-500 scale-110" // Đã thích thì hiện màu đỏ lấp lánh
+                : "bg-white/80 text-gray-500 hover:text-red-500" // Chưa thích thì hiện màu xám
+            }`}
+            title={isFavorite ? "Bỏ quan tâm" : "Thêm vào danh sách quan tâm"}
           >
             ❤
           </button>
@@ -292,7 +303,7 @@ const ApartmentCard = ({ data, isSlider, showBadge }) => {
           <b className="text-gray-700">{data.features?.area || 0}m²</b>
         </span>
       </div>
-    </div>
+    </Link>
   );
 };
 

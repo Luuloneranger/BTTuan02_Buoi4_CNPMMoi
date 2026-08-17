@@ -5,6 +5,7 @@ import { logoutAction } from "../../store/authSlice";
 
 const Header = () => {
   const { user } = useSelector((state) => state.auth);
+  const cart = useSelector((state) => state.cart);
   const dispatch = useDispatch();
 
   return (
@@ -18,6 +19,12 @@ const Header = () => {
         </Link>
         {user ? (
           <div className="flex items-center gap-4">
+            <Link
+              to="/purchased"
+              className="text-gray-700 font-semibold hover:text-blue-600 transition"
+            >
+              Căn hộ đã mua
+            </Link>
             <Link
               to="/profile"
               className="text-gray-700 font-semibold bg-gray-100 px-3 py-1.5 rounded-lg border"
@@ -46,7 +53,7 @@ const Header = () => {
       >
         🛒 Danh sách quan tâm
         <span className="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">
-          1
+          {cart?.items?.length || 0}
         </span>
       </Link>
     </nav>

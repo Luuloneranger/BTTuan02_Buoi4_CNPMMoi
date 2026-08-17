@@ -6,6 +6,7 @@ const contract = require("./routes/contractRoute");
 const authRoutes = require("./routes/authRoute");
 const apartmentRoutes = require("./routes/apartmentRoute");
 const cartRoute = require("./routes/cartRoute");
+const adminRoute = require("./routes/adminRoute");
 
 const app = express();
 
@@ -17,6 +18,7 @@ connectDB();
 
 app.use("/api/auth", authRoutes);
 app.use("/api/apartments", apartmentRoutes);
+app.use("/api/admin", adminRoute);
 
 const PORT = process.env.PORT || 8089;
 app.listen(PORT, () => {

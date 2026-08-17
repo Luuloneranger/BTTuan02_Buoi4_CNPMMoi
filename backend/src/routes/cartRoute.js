@@ -4,14 +4,14 @@ const {
   getCart,
   addToCart,
   removeFromCart,
+  clearCart,
 } = require("../controllers/cartController");
 const express = require("express");
 const router = express.Router();
 
-router.use(verifyToken);
-
-router.get("/", getCart);
-router.post("/add", addToCart);
-router.delete("/remove", removeFromCart);
+router.get("/", verifyToken, getCart);
+router.post("/add", verifyToken, addToCart);
+router.delete("/remove/:id", verifyToken, removeFromCart);
+router.delete("/clear", verifyToken, clearCart);
 
 module.exports = router;

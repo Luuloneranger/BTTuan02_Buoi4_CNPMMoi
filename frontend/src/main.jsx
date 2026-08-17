@@ -14,6 +14,7 @@ import ForgotPasswordPage from "./pages/forgot-password.jsx";
 import ProfilePage from "./pages/profile.jsx";
 import BookingCart from "./pages/BookingCart.jsx";
 import ResidentDashboard from "./pages/ResidentDashboard.jsx";
+import PurchasedApartments from "./pages/PurchasedApartments.jsx";
 
 const router = createBrowserRouter([
   {
@@ -24,7 +25,8 @@ const router = createBrowserRouter([
       { path: "apartments/:id", element: <ApartmentDetail /> }, // Trang chi tiết sản phẩm
       { path: "profile", element: <ProfilePage /> },
       { path: "cart", element: <BookingCart /> },
-      { path: "dashboard", element: <ResidentDashboard /> },
+      { path: "resident-dashboard", element: <ResidentDashboard /> },
+      { path: "purchased", element: <PurchasedApartments /> },
     ],
   },
   { path: "register", element: <RegisterPage /> },

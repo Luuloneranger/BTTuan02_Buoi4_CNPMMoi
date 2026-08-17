@@ -1,18 +1,33 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axiosClient from "../api/axiosClient";
+import { useSelector } from "react-redux";
 
 const ResidentDashboard = () => {
-  // Giả định dữ liệu lấy từ bảng Contract sau khi đã kích hoạt thành công
-  const [contractData, setContractData] = useState({
-    apartmentNumber: "Room 12.05 - Block A",
-    cleaningService: {
-      isRegistered: true, // Thử đổi thành false để xem giao diện tự động ẩn đi
-      stepStatus: "DEEP_CLEANING", // Các bước: COLLECTING_WASTE -> DEEP_CLEANING -> DONE
-    },
-    smartHomeService: {
-      isRegistered: true,
-      activationStatus: "ACTIVATED",
-    },
-  });
+  const { user } = useSelector((state) => state.auth);
+  const [contractData, setContractData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const fetchDashboard = async () => {
+      try {
+        const res = await axiosClient.get("/contracts/resident-dashboard");
+        if (res.data.success) {
+          setContractData(res.data.data);
+        }
+      } catch (err) {
+        setError(err.response?.data?.message || "Không thể tải dữ liệu không gian cư dân.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (user) {
+      fetchDashboard();
+    } else {
+      setLoading(false);
+    }
+  }, [user]);
 
   // Mảng định nghĩa các bước của thanh tiến độ dọn dẹp (Yêu cầu 3)
   const cleaningSteps = [
@@ -21,8 +36,30 @@ const ResidentDashboard = () => {
     { key: "DONE", label: "Sẵn sàng bàn giao", icon: "🔑" },
   ];
 
+  if (!user) {
+    return <div className="p-8 text-center text-gray-500">Vui lòng đăng nhập để xem không gian cư dân.</div>;
+  }
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-gray-50">
+        <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  if (error || !contractData) {
+    return (
+      <div className="max-w-5xl mx-auto px-4 py-8">
+        <div className="bg-rose-50 text-rose-700 p-4 rounded-xl border border-rose-200">
+          {error || "Chưa có thông tin căn hộ. Vui lòng thanh toán hợp đồng trước."}
+        </div>
+      </div>
+    );
+  }
+
   const currentStepIndex = cleaningSteps.findIndex(
-    (step) => step.key === contractData.cleaningService.stepStatus,
+    (step) => step.key === contractData.cleaningService?.stepStatus,
   );
 
   return (
@@ -42,13 +79,13 @@ const ResidentDashboard = () => {
       </div>
 
       {/* ─── YÊU CẦU 3: THANH TIẾN ĐỘ DỌN DẸP PHÒNG MỚI ─── */}
-      {contractData.cleaningService.isRegistered ? (
+      {contractData.cleaningService?.isRegistered ? (
         <div className="bg-white border rounded-2xl p-6 shadow-sm space-y-6">
           <div className="flex justify-between items-center border-b pb-3">
             <h3 className="text-sm font-bold text-gray-800 flex items-center gap-1.5">
               🧹 Tiến Độ Chuẩn Bị & Dọn Dẹp Căn Hộ
             </h3>
-            <span className="text-xs text-blue-600 font-bold bg-blue-5 text-blue-600 px-2 py-0.5 rounded">
+            <span className="text-xs text-blue-600 font-bold bg-blue-50 text-blue-600 px-2 py-0.5 rounded">
               Gói dịch vụ đã chọn
             </span>
           </div>
@@ -107,8 +144,8 @@ const ResidentDashboard = () => {
         </div>
 
         <div className="text-right border-l pl-6 flex flex-col items-end justify-center">
-          {contractData.smartHomeService.isRegistered &&
-          contractData.smartHomeService.activationStatus === "ACTIVATED" ? (
+          {contractData.smartHomeService?.isRegistered &&
+          contractData.smartHomeService?.activationStatus === "ACTIVATED" ? (
             <div className="space-y-2 w-full text-center">
               <span className="inline-block w-full text-xs text-center bg-purple-50 text-purple-700 font-bold border border-purple-200 py-2 rounded-xl animate-pulse">
                 🟢 ĐÃ KÍCH HOẠT HỆ THỐNG
@@ -119,8 +156,8 @@ const ResidentDashboard = () => {
               </button>
             </div>
           ) : (
-            <button className="w-full text-xs bg-blue-600 text-white font-bold py-2.5 px-4 rounded-xl hover:bg-blue-700 shadow-sm transition">
-              Đăng ký kích hoạt gói (2.500.000đ)
+            <button className="w-full text-xs bg-blue-600 text-white font-bold py-2.5 px-4 rounded-xl hover:bg-blue-700 shadow-sm transition" disabled={contractData.smartHomeService?.isRegistered}>
+              {contractData.smartHomeService?.isRegistered ? "Đang chờ kích hoạt" : "Đăng ký kích hoạt gói (2.500.000đ)"}
             </button>
           )}
         </div>

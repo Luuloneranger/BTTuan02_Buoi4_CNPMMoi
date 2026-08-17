@@ -16,15 +16,13 @@ const CategoryLazyLoad = () => {
 
   const [page, setPage] = useState(1);
   const currentCategoryId = "6645a1b2c3d4e5f6a7b8c901";
-  const observerTarget = useRef(null); // Chiếc gờ giám sát cuối trang
+  const observerTarget = useRef(null);
 
-  // Mỗi khi đổi danh mục, dọn sạch mảng cũ và đặt trang về 1
   useEffect(() => {
     dispatch(clearLazyList());
     setPage(1);
   }, [currentCategoryId, dispatch]);
 
-  // Gọi API lấy dữ liệu khi số trang (page) tăng lên
   useEffect(() => {
     dispatch(
       fetchByCategoryLazyThunk({
@@ -35,16 +33,14 @@ const CategoryLazyLoad = () => {
     );
   }, [currentCategoryId, page, dispatch]);
 
-  // Thiết lập cảm biến IntersectionObserver bắt sự kiện cuộn xuống cuối trang
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
-        // Nếu nhìn thấy cái gờ cuối trang và Backend báo vẫn còn phòng để load
         if (entries[0].isIntersecting && hasMore && !isLoading) {
-          setPage((prevPage) => prevPage + 1); // Tăng số trang lên 1 để kích hoạt Thunk
+          setPage((prevPage) => prevPage + 1);
         }
       },
-      { threshold: 1.0 }, // Chạm hẳn vào gờ mới kích hoạt
+      { threshold: 1.0 },
     );
 
     if (observerTarget.current) {
